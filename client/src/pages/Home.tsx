@@ -231,7 +231,9 @@ export default function Home() {
                         <ImportLoadSaveActions downloadUrl={downloadUrl} filename={filename} />
                       </div>
                     </div>
-                  ))}
+                      );
+                    })
+                  }
                   
                   {videoInfo.formats.length === 0 && (
                      <div className="text-center py-8 text-slate-500">
