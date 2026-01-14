@@ -98,7 +98,7 @@ export default function SaveActions({ downloadUrl, filename }: Props) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Save "{filename.replace(/\.[^.]+$/, "")}"</DialogTitle>
-          <DialogDescription>Select where to save or upload the video.</DialogDescription>
+          <DialogDescription>Select where to save the video.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
@@ -107,12 +107,12 @@ export default function SaveActions({ downloadUrl, filename }: Props) {
             <span className="text-sm text-muted-foreground">Use File System Access API if available</span>
           </div>
 
-          {/* Drive upload option removed per request - will be added later */}
+
 
           {status && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">{status === "downloading" ? "Downloading..." : status === "uploading" ? "Uploading..." : status}</div>
+                <div className="text-sm text-muted-foreground">{status === "downloading" ? "Downloading..." : status === "done" ? "Saved" : status === "error" ? "Failed" : status}</div>
                 <div className="text-sm font-medium">{progress}%</div>
               </div>
               <Progress value={progress} />
