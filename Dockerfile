@@ -13,14 +13,17 @@ COPY . .
 RUN npm run build
 
 # Runner stage (production)
-FROM node:20-alpine AS runner
+# Use Debian-based slim image for more reliable system packages
+FROM node:20-bullseye-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
 # Install Python, pip, and ffmpeg; then install yt-dlp
-RUN apk add --no-cache python3 py3-pip ffmpeg \
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends python3 python3-pip ffmpeg ca-certificates \
  && pip3 install --no-cache-dir -U yt-dlp \
- && rm -rf /var/cache/apk/*
+ && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
+ && rm -rf /var/lib/apt/lists/*
 
 # Copy built server and client artifacts
 COPY --from=builder /app/dist ./dist
