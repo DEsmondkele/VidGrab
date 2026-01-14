@@ -9,7 +9,7 @@ export const errorSchemas = {
 
 export const api = {
   info: {
-    method: 'POST' as const,
+    method: 'POST',
     path: '/api/info',
     input: urlInputSchema,
     responses: {
@@ -19,7 +19,7 @@ export const api = {
     },
   },
   download: {
-    method: 'GET' as const,
+    method: 'GET',
     path: '/api/download', // URL params: url, format_id, title
     input: z.object({
       url: z.string(),
@@ -43,3 +43,6 @@ export function buildUrl(path: string, params?: Record<string, string | number>)
   }
   return url;
 }
+
+// re-export common types from schema for convenience
+export type { UrlInput, VideoInfo } from './schema';

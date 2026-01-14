@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { api, type UrlInput, type VideoInfo } from "@shared/routes";
+import { api, type UrlInput, type VideoInfo } from "@/lib/api";
 
 export function useVideoInfo() {
   return useMutation({

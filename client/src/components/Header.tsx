@@ -1,11 +1,13 @@
-import { Link, useLocation } from "wouter";
+import Link from "next/link";
+import { useRouter } from "next/router";
 import { Download, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
-  const [location] = useLocation();
+  const router = useRouter();
+  const location = router.pathname;
 
   const navLinks = [
     { href: "/", label: "Home" },

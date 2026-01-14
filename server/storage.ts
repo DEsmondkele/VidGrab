@@ -1,26 +1,24 @@
-import { users, type User, type InsertUser } from "@shared/schema";
-import { db } from "./db";
-import { eq } from "drizzle-orm";
-
 // Minimal storage implementation required by template
+// This project does not currently use user storage. Keep a small shim so
+// server code that imports `storage` compiles both for local and Vercel builds.
+
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  // intentionally generic to avoid tight coupling
+  getUser(id: string): Promise<any | undefined>;
+  getUserByUsername(username: string): Promise<any | undefined>;
+  createUser(user: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
-  async getUser(id: string): Promise<User | undefined> {
-    // Dummy implementation as we don't use users
+  async getUser(_id: string): Promise<any | undefined> {
     return undefined;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
+  async getUserByUsername(_username: string): Promise<any | undefined> {
     return undefined;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    // Dummy implementation
+  async createUser(_user: any): Promise<any> {
     throw new Error("Not implemented");
   }
 }
