@@ -19,8 +19,10 @@ export function useVideoInfo() {
           throw new Error(error.message);
         }
         if (res.status === 500) {
-          const error = api.info.responses[500].parse(await res.json());
-          throw new Error(error.message);
+          const errorJson = await res.json().catch(() => ({ message: 'Server error' }));
+          // Surface optional `details` (development-only) to aid debugging
+          const message = errorJson.message + (errorJson.details ? ` — ${errorJson.details}` : '');
+          throw new Error(message);
         }
         throw new Error("Failed to fetch video information");
       }

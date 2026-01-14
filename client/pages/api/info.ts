@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { spawn } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import { z } from 'zod';
 
 const urlInputSchema = z.object({ url: z.string().url({ message: 'Please enter a valid URL' }) });
@@ -37,9 +37,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json(body);
     }
 
+    // Check yt-dlp is available early to fail-fast with a clear message
+    try {
+      const check = spawnSync('yt-dlp', ['--version'], { timeout: 2000 });
+      if (check.error || check.status !== 0) {
+        console.error('yt-dlp availability check failed', check.error || (check.stderr && check.stderr.toString()));
+        return res.status(500).json({ message: 'yt-dlp binary not available on the server. Install yt-dlp or set YTDLP_API_URL to a hosted extractor.' });
+      }
+    } catch (e) {
+      console.error('yt-dlp availability check threw', e);
+      return res.status(500).json({ message: 'yt-dlp binary not available on the server. Install yt-dlp or set YTDLP_API_URL to a hosted extractor.' });
+    }
+
     const url = input.url as string;
 
+    let responded = false;
+
     const ytDlp = spawn('yt-dlp', ['--dump-json', '--no-warnings', '--no-call-home', url]);
+
+    // If spawn fails (e.g., yt-dlp not installed), child_process emits 'error'
+    ytDlp.on('error', (err: any) => {
+      console.error('yt-dlp spawn error', err);
+      if (!responded) {
+        responded = true;
+        return res.status(500).json({ message: 'yt-dlp binary not available on the server. Install yt-dlp or set YTDLP_API_URL to a hosted extractor.' });
+      }
+    });
 
     let stdoutData = '';
     let stderrData = '';
@@ -53,9 +76,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     ytDlp.on('close', (code) => {
+      if (responded) return;
       if (code !== 0) {
         console.error(`yt-dlp error: ${stderrData}`);
-        return res.status(500).json({ message: 'Failed to fetch video info. URL might be invalid or unsupported.' });
+        responded = true;
+        const debug = process.env.NODE_ENV !== 'production';
+        return res.status(500).json({ message: 'Failed to fetch video info. URL might be invalid or unsupported.', ...(debug ? { details: stderrData } : {}) });
       }
 
       try {
@@ -91,18 +117,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           formats: uniqueFormats.sort((a, b) => (parseInt(b.resolution) || 0) - (parseInt(a.resolution) || 0)),
         };
 
+        responded = true;
         return res.status(200).json(videoInfo);
-      } catch (e) {
+      } catch (e: any) {
         console.error('JSON parse error', e);
-        return res.status(500).json({ message: 'Failed to parse video metadata' });
+        responded = true;
+        const debug = process.env.NODE_ENV !== 'production';
+        return res.status(500).json({ message: 'Failed to parse video metadata', ...(debug ? { details: e?.message } : {}) });
       }
     });
 
     // safety timeout in case process hangs
     const timeout = setTimeout(() => {
+      if (responded) return;
       try {
         ytDlp.kill('SIGKILL');
       } catch {}
+      responded = true;
       return res.status(500).json({ message: 'yt-dlp timed out' });
     }, 30_000);
 

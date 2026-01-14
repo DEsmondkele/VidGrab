@@ -3,7 +3,8 @@ import { z } from 'zod';
 import type { UrlInput, VideoInfo } from './schemas';
 
 const errorValidationSchema = z.object({ message: z.string() });
-const errorServerSchema = z.object({ message: z.string() });
+// Allow an optional `details` field for development-only debugging information
+const errorServerSchema = z.object({ message: z.string(), details: z.string().optional() });
 
 export const api = {
   info: {
