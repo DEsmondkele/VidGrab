@@ -5,8 +5,10 @@ import { z } from 'zod';
 const urlInputSchema = z.object({ url: z.string().url({ message: 'Please enter a valid URL' }) });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
+  const method = req.method || 'GET';
+  console.log(`/api/info called with method ${method}`);
+  if (method !== 'POST' && method !== 'GET') {
+    res.setHeader('Allow', 'POST, GET');
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
@@ -18,7 +20,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const input = urlInputSchema.parse(req.body);
+    // Accept GET for convenience (url in query) or POST (url in body)
+    const input = method === 'GET'
+      ? urlInputSchema.parse({ url: String(req.query.url || '') })
+      : urlInputSchema.parse(req.body);
 
     if (proxyUrl) {
       // Forward request to external service
