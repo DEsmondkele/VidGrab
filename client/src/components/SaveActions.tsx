@@ -26,15 +26,56 @@ export default function SaveActions({ downloadUrl, filename }: Props) {
       if (!res.body) throw new Error("No response body from server");
 
       const contentLength = Number(res.headers.get("content-length") || 0) || undefined;
+      const contentType = res.headers.get("content-type") || undefined;
+      const contentDisposition = res.headers.get("content-disposition") || undefined;
+
+      const extFromHeaders = () => {
+        if (contentDisposition) {
+          const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/.exec(contentDisposition);
+          if (match && match[1]) {
+            const name = decodeURIComponent(match[1]);
+            const m = name.match(/\.([a-z0-9]{1,6})(?:\?.*)?$/i);
+            if (m) return m[1];
+          }
+        }
+
+        if (contentType) {
+          const mime = contentType.split(";")[0].trim().toLowerCase();
+          const map: Record<string, string> = {
+            "video/mp4": "mp4",
+            "video/webm": "webm",
+            "audio/webm": "webm",
+            "audio/mpeg": "mp3",
+            "audio/mp4": "m4a",
+            "video/ogg": "ogv",
+            "application/x-mpegurl": "m3u8",
+            "application/octet-stream": "bin",
+          };
+          if (map[mime]) return map[mime];
+          const parts = mime.split("/");
+          if (parts[1]) return parts[1].replace(/[+].*$/g, "");
+        }
+
+        return undefined;
+      };
+
+      const ensureHasExt = (name: string, ext?: string) => {
+        if (!ext) return name;
+        if (/\.[a-z0-9]{1,6}$/i.test(name)) return name;
+        return `${name}.${ext}`;
+      };
+
+      const detectedExt = extFromHeaders();
+      const finalFilename = ensureHasExt(filename, detectedExt || undefined);
 
       // File System Access API
       // @ts-ignore
       if ((window as any).showSaveFilePicker) {
         // @ts-ignore
         const handle = await (window as any).showSaveFilePicker({
-          suggestedName: filename,
+          suggestedName: finalFilename,
           types: [
-            { description: "MP4 Video", accept: { "video/mp4": [".mp4"] } },
+            { description: "Video", accept: { [contentType || "video/mp4"]: [`.${detectedExt || "mp4"}`] } },
           ],
         });
         const writable = await handle.createWritable();
@@ -45,8 +86,8 @@ export default function SaveActions({ downloadUrl, filename }: Props) {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          await writable.write(value);
-          received += value ? value.length : 0;
+          await writable.write(value as any);
+          received += value ? (value as Uint8Array).length : 0;
           if (contentLength) setProgress(Math.round((received / contentLength) * 100));
         }
 
@@ -62,16 +103,16 @@ export default function SaveActions({ downloadUrl, filename }: Props) {
           const { done, value } = await reader.read();
           if (done) break;
           if (value) {
-            chunks.push(value);
-            received += value.length;
+            chunks.push(value as Uint8Array);
+            received += (value as Uint8Array).length;
             if (contentLength) setProgress(Math.round((received / contentLength) * 100));
           }
         }
-        const blob = new Blob(chunks, { type: "video/mp4" });
+        const blob = new Blob(chunks as BlobPart[], { type: contentType || "application/octet-stream" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = filename;
+        a.download = finalFilename;
         document.body.appendChild(a);
         a.click();
         a.remove();
