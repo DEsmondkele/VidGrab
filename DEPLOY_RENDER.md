@@ -14,10 +14,17 @@ If you'd like to deploy backend to Render (and keep frontend on Vercel), follow 
 
    npm run start
 
-5. Set environment variables in the Render dashboard (you MUST set these):
+5. Set environment variables in the Render dashboard (set `NODE_ENV`; `DATABASE_URL` is optional unless you want download logging):
 
-   - DATABASE_URL (Postgres connection string)
    - NODE_ENV = production
+   - DATABASE_URL (Postgres connection string) — optional for logging
+
+
+Notes / Tips
+- The repo is a monorepo containing both client and server. By default the server build will also build the client; if you prefer deploying the client to Vercel separately, it is okay — the Render step will still build Next but it's harmless if you keep both builds.
+- If you want to avoid building the client in Render, you can modify the build step to only build server artifacts, but the default workflow keeps things simple.
+- We included `render.yaml` and a `Dockerfile` in the repo. If you prefer Docker-based deployments, use the `Dockerfile` and set Render to deploy via Docker.
+- The server will work without a database; set `DATABASE_URL` only if you want to enable download logging to Postgres.
 
 6. (Optional) Expose a health check path (e.g., `/api/info`), enable automatic deploys on push.
 
