@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useVideoInfo, getDownloadUrl } from "@/hooks/use-video";
+import { useVideoInfo, getDownloadUrl, getStreamFetchOptions } from "@/hooks/use-video";
 import { AdPlaceholder } from "@/components/AdPlaceholder";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,9 @@ import {
   AlertCircle 
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import dynamic from "next/dynamic";
+
+const ImportLoadSaveActions = dynamic(() => import('@/components/SaveActions').then((m) => m.default), { ssr: false });
 
 export default function Home() {
   const [url, setUrl] = useState("");
@@ -200,11 +203,15 @@ export default function Home() {
                   {videoInfo.formats
                     .filter(f => f.vcodec !== 'none' && f.acodec !== 'none') // Filter simple formats
                     .slice(0, 5) // Limit to top 5 for cleaner UI
-                    .map((format, idx) => (
-                    <div 
-                      key={`${format.format_id}-${idx}`}
-                      className="group flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl hover:border-primary/50 hover:shadow-md transition-all duration-200"
-                    >
+                    .map((format, idx) => {
+                      const sanitize = (name?: string) => (name || "video").replace(/[\\/:*?"<>|]/g, "_").trim().slice(0, 200);
+                      const filename = `${sanitize(videoInfo.title)}.${format.ext || 'mp4'}`;
+                      const downloadUrl = getStreamFetchOptions(url, format.format_id, videoInfo.title);
+                      return (
+                      <div 
+                        key={`${format.format_id}-${idx}`}
+                        className="group flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl hover:border-primary/50 hover:shadow-md transition-all duration-200"
+                      >
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
                           {format.ext.toUpperCase()}
@@ -219,15 +226,10 @@ export default function Home() {
                         </div>
                       </div>
 
-                      <a 
-                        href={getDownloadUrl(url, format.format_id, videoInfo.title)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-lg font-medium text-sm hover:bg-primary hover:shadow-lg hover:shadow-primary/25 transition-all duration-200"
-                      >
-                        <Download className="w-4 h-4" />
-                        Download
-                      </a>
+                      <div className="flex items-center gap-2">
+                        {/* SaveActions modal with stream download URL & filename */}
+                        <ImportLoadSaveActions downloadUrl={downloadUrl} filename={filename} />
+                      </div>
                     </div>
                   ))}
                   

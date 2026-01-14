@@ -37,3 +37,11 @@ export function getDownloadUrl(url: string, formatId?: string, title?: string) {
   if (title) params.append("title", title);
   return `${api.download.path}?${params.toString()}`;
 }
+
+export function getStreamFetchOptions(url: string, formatId?: string, title?: string) {
+  const params = new URLSearchParams();
+  params.append("url", url);
+  if (formatId) params.append("format_id", formatId);
+  if (title) params.append("title", title);
+  return `${api.download.path}?${params.toString()}`;
+}
