@@ -24,6 +24,12 @@ export async function registerRoutes(
         url
       ]);
 
+      // If spawn fails (e.g., binary missing), return clear error
+      ytDlp.on('error', (err: any) => {
+        console.error('yt-dlp spawn error', err);
+        return res.status(500).json({ message: 'yt-dlp binary not available on the server.' });
+      });
+
       let stdoutData = '';
       let stderrData = '';
 
@@ -115,6 +121,19 @@ export async function registerRoutes(
         '--no-warnings',
         '--no-call-home',
       ];
+
+  // health endpoint to verify yt-dlp availability
+  app.get('/__health', async (_req, res) => {
+    const check = spawn('yt-dlp', ['--version']);
+    let out = '';
+    check.stdout.on('data', (d) => out += d.toString());
+    check.on('close', (code) => {
+      if (code === 0) {
+        return res.json({ ok: true, yt_dlp_version: out.trim() });
+      }
+      return res.status(500).json({ ok: false, message: 'yt-dlp not available' });
+    });
+  });
       
       if (format_id) {
         args.push('-f', format_id);
@@ -126,6 +145,12 @@ export async function registerRoutes(
       args.push(url);
 
       const ytDlp = spawn('yt-dlp', args);
+
+      ytDlp.on('error', (err: any) => {
+        console.error('yt-dlp spawn error', err);
+        res.status(500).send('yt-dlp binary not available on the server.');
+        return;
+      });
 
       ytDlp.stdout.pipe(res);
 
