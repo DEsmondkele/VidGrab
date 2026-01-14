@@ -11,3 +11,6 @@ Notes:
 - This project uses Google Identity Services token client to request an access token with `drive.file` scope.
 - For large files, the current implementation collects the file in memory before uploading as a multipart request. For production, implement resumable uploads (https://developers.google.com/drive/api/guides/manage-uploads).
 - Ensure your OAuth consent screen is configured properly when requesting access from end users.
+
+Deployment:
+- Set `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in your frontend hosting environment (e.g., Vercel Environment Variables) so the client can request Drive access tokens at runtime.
