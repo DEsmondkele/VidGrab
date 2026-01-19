@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from "react";
 import { useVideoInfo, getDownloadUrl, getStreamFetchOptions } from "@/hooks/use-video";
 import { AdPlaceholder } from "@/components/AdPlaceholder";

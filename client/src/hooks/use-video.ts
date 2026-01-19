@@ -7,7 +7,7 @@ export function useVideoInfo() {
       // Validate input client-side before sending
       const validatedInput = api.info.input.parse(data);
 
-      const res = await fetch(api.info.path, {
+      const res = await fetch(api.info.url, {
         method: api.info.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validatedInput),
@@ -37,7 +37,7 @@ export function getDownloadUrl(url: string, formatId?: string, title?: string) {
   params.append("url", url);
   if (formatId) params.append("format_id", formatId);
   if (title) params.append("title", title);
-  return `${api.download.path}?${params.toString()}`;
+  return `${api.download.url}?${params.toString()}`;
 }
 
 export function getStreamFetchOptions(url: string, formatId?: string, title?: string) {
@@ -45,5 +45,5 @@ export function getStreamFetchOptions(url: string, formatId?: string, title?: st
   params.append("url", url);
   if (formatId) params.append("format_id", formatId);
   if (title) params.append("title", title);
-  return `${api.download.path}?${params.toString()}`;
+  return `${api.download.url}?${params.toString()}`;
 }
